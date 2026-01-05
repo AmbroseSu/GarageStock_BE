@@ -52,9 +52,9 @@ public class SendMailService : ISendMailService
         await _unitOfWork.SaveChangesAsync();
 
         // 4. Enqueue Hangfire job
-        BackgroundJob.Enqueue<SendMailJob>(
+        /*BackgroundJob.Enqueue<SendMailJob>(
             job => job.Process(sendMail.SendMailId)
-        );
+        );*/
 
         return sendMail.SendMailId;
     }
@@ -70,6 +70,13 @@ public class SendMailService : ISendMailService
                 ["Email"] = user.Email,
                 ["Password"] = plainPassword
             }
+        );
+    }
+    
+    public void EnqueueJob(Guid sendMailId)
+    {
+        BackgroundJob.Enqueue<SendMailJob>(
+            job => job.Process(sendMailId)
         );
     }
     

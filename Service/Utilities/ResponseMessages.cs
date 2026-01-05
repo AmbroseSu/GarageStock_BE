@@ -19,5 +19,8 @@ public class ResponseMessages
     public const string UserHasDeleted = "User has been deleted";
     public const string UserNameAlreadyExists = "Username already exists";
     public const string PhoneNumberFormatInvalid = "Invalid phone number format";
+    public const string EmailIsRequired = "Email is required";
+    public const string UsernameIsRequired = "Username is required";
+    public const string FullNameIsRequired = "Full name is required";
 
 }

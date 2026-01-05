@@ -23,50 +23,10 @@ public class EmailService : IEmailService
         _unitOfWork = unitOfWork;
     }
     
-    /*public async Task<ResponseDto> SendEmail(string emailResponse, string subject, string content)
-    {
-        try
-        {
-            if (!IsValidEmail(emailResponse))
-                return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(emailResponse);
-            if (user == null)
-                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-            //int otp = GenerateOTP();
-            var email = new MimeMessage();
-            email.From.Add(MailboxAddress.Parse("lisa92@ethereal.email"));
-            email.To.Add(MailboxAddress.Parse(emailResponse));
-            email.Subject = subject;
-            email.Body = new TextPart(TextFormat.Html)
-            {
-                Text = content
-            };
-
-            using var smtp = new SmtpClient();
-            smtp.Connect(_config.GetSection("EmailHost").Value, 587, SecureSocketOptions.StartTls);
-            smtp.Authenticate(_config.GetSection("EmailUserName").Value, _config.GetSection("EmailPassword").Value);
-            smtp.Send(email);
-            smtp.Disconnect(true);
-            /*var verificationToken = new VerificationOtp(otp.ToString(), user.UserId);
-            verificationToken.User = user;#1#
-
-            // Save the verification token to the repository
-            //await _unitOfWork.VerificationOtpUOW.AddAsync(verificationToken);
-            //await _unitOfWork.SaveChangesAsync();
-            return ResponseUtil.GetObject("Send email Success", "ok", HttpStatusCode.Created, 0);
-        }
-        catch (Exception ex)
-        {
-            return ResponseUtil.Error(ex.Message, "Failed", HttpStatusCode.InternalServerError);
-        }
-    }*/
-    
     public async Task SendAsync(string toEmail, string subject, string htmlContent)
     {
         var email = new MimeMessage();
-        email.From.Add(MailboxAddress.Parse(_config["EmailFrom"]));
+        email.From.Add(MailboxAddress.Parse(_config["EmailUserName"]));
         email.To.Add(MailboxAddress.Parse(toEmail));
         email.Subject = subject;
 

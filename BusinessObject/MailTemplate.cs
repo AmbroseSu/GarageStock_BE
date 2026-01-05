@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BusinessObject.Enums;
 
 namespace BusinessObject;
 
@@ -10,7 +11,7 @@ public class MailTemplate
     public Guid TemplateId { get; set; }
 
     [Required]
-    public string TemplateCode { get; set; } // CREATE_USER, RESET_PASSWORD
+    public MailTemplateCode TemplateCode { get; set; } // CREATE_USER, RESET_PASSWORD
 
     [Required]
     public string Subject { get; set; }

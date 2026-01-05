@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
+using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using Repository;
@@ -14,12 +15,14 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
+    private readonly ISendMailService _sendMailService;
     
-    public UserService(IMapper mapper, IUnitOfWork unitOfWork, IUserRepository userRepository)
+    public UserService(IMapper mapper, IUnitOfWork unitOfWork, IUserRepository userRepository, ISendMailService sendMailService)
     {
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+        _sendMailService = sendMailService;
     }
     
     public async Task<ResponseDto> CreateUser(UserRequest userRequest)
@@ -27,106 +30,89 @@ public class UserService : IUserService
         try
         {
             if (userRequest == null) throw new ArgumentNullException(nameof(userRequest));
+            
+            userRequest.Email = userRequest.Email?.Trim();
+            userRequest.Username = userRequest.Username?.Trim();
+            userRequest.PhoneNumber = userRequest.PhoneNumber?.Trim();
+            
+            if (string.IsNullOrWhiteSpace(userRequest.Email))
+                return ResponseUtil.Error(ResponseMessages.EmailIsRequired, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
-            var userExistEmail = await _unitOfWork.UserUOW.FindUserByEmailAsync(userRequest.Email);
-            if (userExistEmail != null)
-                return ResponseUtil.Error(ResponseMessages.EmailAlreadyExists, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+            if (string.IsNullOrWhiteSpace(userRequest.Username))
+                return ResponseUtil.Error(ResponseMessages.UsernameIsRequired, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
-            /*if (userExistEmail!.IsDeleted)
-                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);*/
-            //var emailAttribute = new EmailAddressAttribute();
-            /*if (IsValidEmail(userRequest.Email))
-            {
-                return ResponseUtil.Error(ResponseMessages.InvalidEmailFormat, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }*/
-            var userExistUserName = await _unitOfWork.UserUOW.FindUserByUsernameAsync(userRequest.Username);
-            if (userExistUserName != null)
-                return ResponseUtil.Error(ResponseMessages.UserNameAlreadyExists, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-
-            /*if (userExistUserName!.IsDeleted)
-                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);*/
+            if (string.IsNullOrWhiteSpace(userRequest.FullName))
+                return ResponseUtil.Error(ResponseMessages.FullNameIsRequired, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
             if (!IsValidEmail(userRequest.Email))
-                return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
-            if (!IsValidPhoneNumber(userRequest.PhoneNumber))
-                return ResponseUtil.Error(ResponseMessages.PhoneNumberFormatInvalid, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+            if (!string.IsNullOrWhiteSpace(userRequest.PhoneNumber) && !IsValidPhoneNumber(userRequest.PhoneNumber))
+                return ResponseUtil.Error(ResponseMessages.PhoneNumberFormatInvalid, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            
+            var userExistEmail = await _unitOfWork.UserUOW.FindUserByEmailAsync(userRequest.Email);
+            if (userExistEmail != null)
+                return ResponseUtil.Error(ResponseMessages.EmailAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+
+            var userExistUserName = await _unitOfWork.UserUOW.FindUserByUsernameAsync(userRequest.Username);
+            if (userExistUserName != null)
+                return ResponseUtil.Error(ResponseMessages.UserNameAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
             var plainPassword = GenerateRandomString(10);
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(plainPassword);
 
 
             var user = _mapper.Map<Users>(userRequest);
-            //user.Password = BCrypt.Net.BCrypt.HashPassword("Hieu1234");
             user.Password = hashedPassword;
-            //user.PhoneNumber = userRequest.PhoneNumber;
-            //user.DateOfBirth = userRequest.DateOfBirth;
-            //user.FullName = userRequest.FullName;
             user.IsDeleted = false;
             user.IsActive = true;
             user.CreatedAt = DateTime.Now;
             user.UpdatedAt = DateTime.Now;
-            //await _unitOfWork.UserUOW.AddAsync(user);
-            /*var saveChange = *///await _unitOfWork.SaveChangesAsync();
-            /*if (saveChange > 0)
+            
+            
+            Guid sendMailId;
+
+            // 5) Transaction: create user + create SendMail (Pending) must be atomic
+            await using var tx = await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                var userRole = new UserRole();
-                userRole.UserId = user.UserId;
-                userRole.RoleId = userRequest.RoleId;
-                userRole.IsPrimary = true;
-                await _unitOfWork.UserRoleUOW.AddAsync(userRole);
-                var saveChange1 = await _unitOfWork.SaveChangesAsync();
-                if (saveChange1 > 0)
+                await _unitOfWork.UserUOW.AddAsync(user);
+                var affected = await _unitOfWork.SaveChangesAsync();
+                if (affected <= 0)
                 {
-                    var emailContent = $"Xin chào {userRequest.UserName},<br><br>"
-                                       + $"Tài khoản của bạn đã được tạo thành công.<br>"
-                                       + $"Tên đăng nhập: <b>{userRequest.Email}</b><br>"
-                                       + $"Mật khẩu: <b>{plainPassword}</b><br><br>"
-                                       + $"Vui lòng đổi mật khẩu sau khi đăng nhập.";
-                    var emailSent = false;
-                    var retryCount = 0;
-                    var maxRetries = 3;
-
-                    //var emailResponse = await _emailService.SendEmail(userRequest.Email, "Tạo tài khoản thành công", emailContent);
-
-                    while (!emailSent && retryCount < maxRetries)
-                    {
-                        var emailResponse = await _emailService.SendEmail(userRequest.Email, "Tạo tài khoản thành công",
-                            emailContent);
-                        if (emailResponse.StatusCode == (int)HttpStatusCode.Created)
-                        {
-                            emailSent = true;
-                        }
-                        else
-                        {
-                            retryCount++;
-                            await Task.Delay(2000); // Chờ 2s trước khi thử lại
-                        }
-                    }
-
-                    if (!emailSent)
-                        return ResponseUtil.Error(ResponseMessages.FailedToSendEmail, ResponseMessages.OperationFailed,
-                            HttpStatusCode.InternalServerError);
-
-                    var result = _mapper.Map<UserDto>(user);
-                    await _loggingService.WriteLogAsync(creatorId,
-                        $"Tạo tài khoản thành công cho {userRequest.FullName} ({userRequest.Email})");
-                    return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,
-                        1);
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
                 }
 
-                return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
-                    HttpStatusCode.InternalServerError);
-            }*/
+                // 6) Enqueue signup email (tạo SendMail record + enqueue job)
+                // QUAN TRỌNG: để enqueue an toàn, tốt nhất tách làm 2 bước:
+                // - trong transaction: tạo SendMail (Pending)
+                // - sau commit: BackgroundJob.Enqueue(...)
+                // => vì bạn đang enqueue ngay trong service, mình khuyên sửa SendMailService theo hướng hỗ trợ 2 bước.
+                //
+                // TẠM THỜI: Nếu bạn vẫn enqueue ngay, hãy đảm bảo transaction commit trước khi job chạy.
+                // Thực tế Hangfire thường chạy sau vài ms nhưng vẫn có race-condition.
+                //
+                // CÁCH CHUẨN: dùng method CreateSendMailPendingAsync + EnqueueJobAfterCommit.
+                //sendMailId = await _sendMailService.EnqueueSignupEmail(user, plainPassword);
+                
+                sendMailId = await _sendMailService.EnqueueSignupEmail(user, plainPassword);
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch (Exception ex)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+            }
+            
+            _sendMailService.EnqueueJob(sendMailId);
 
-            return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
-                HttpStatusCode.InternalServerError);
+            // 7) Response
+            var result = _mapper.Map<UserDto>(user);
+
+            // Nếu bạn muốn trả kèm info mail queue:
+            // result.... (hoặc return object chứa sendMailId)
+            return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception ex)
         {
