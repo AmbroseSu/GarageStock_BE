@@ -72,12 +72,31 @@ public class SendMailService : ISendMailService
             }
         );
     }
-    
-    public void EnqueueJob(Guid sendMailId)
+
+    public Task<Guid> EnqueueForgotPasswordEmail(Users user, string otpCode)
     {
-        BackgroundJob.Enqueue<SendMailJob>(
+        return EnqueueByTemplateAsync(
+            user.Email,
+            MailTemplateCode.Forgot_Password_Otp,
+            new Dictionary<string, string>
+            {
+                ["FullName"] = user.FullName,
+                ["Otp"] = otpCode,
+                ["Year"] = DateTime.Now.Year.ToString()
+            }
+        );
+    }
+    
+    public async Task EnqueueJobAsync(Guid sendMailId)
+    {
+        var jobId = BackgroundJob.Enqueue<SendMailJob>(
             job => job.Process(sendMailId)
         );
+
+        var sendMail = await _unitOfWork.SendMailUOW.GetByIdAsync(sendMailId);
+        sendMail!.HangfireJobId = jobId;
+
+        await _unitOfWork.SaveChangesAsync();
     }
     
     private static string RenderTemplate(string template, Dictionary<string, string> data)

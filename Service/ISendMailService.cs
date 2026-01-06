@@ -12,6 +12,7 @@ public interface ISendMailService
         Guid? triggeredByUserId = null);
 
     Task<Guid> EnqueueSignupEmail(Users user, string plainPassword);
+    Task<Guid> EnqueueForgotPasswordEmail(Users user, string otpCode);
 
-    void EnqueueJob(Guid sendMailId);
+    Task EnqueueJobAsync(Guid sendMailId);
 }

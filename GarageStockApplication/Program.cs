@@ -11,6 +11,7 @@ using Service;
 using Service.Impl;
 using Service.Jobs;
 using Service.Utilities;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -108,6 +109,13 @@ builder.Services.AddHangfire(config =>
 {
     config.UsePostgreSqlStorage(builder.Configuration.GetConnectionString("DB"));
 });
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(
+        builder.Configuration["Redis:ConnectionString"]!
+    )
+);
+
 
 builder.Services.AddHangfireServer();
 

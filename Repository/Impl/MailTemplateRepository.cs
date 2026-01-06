@@ -29,6 +29,6 @@ public class MailTemplateRepository : IMailTemplateRepository
     public async Task<MailTemplate?> GetByCodeAsync(MailTemplateCode? templateCode)
     {
         if (templateCode == null) throw new ArgumentNullException(nameof(templateCode));
-        return await _mailTemplateDao.FindByAsync(u => u.TemplateCode.Equals(MailTemplateCode.Sign_Up));
+        return await _mailTemplateDao.FindByAsync(u => u.TemplateCode.Equals(templateCode));
     }
 }

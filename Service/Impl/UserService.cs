@@ -105,7 +105,7 @@ public class UserService : IUserService
                 return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
             }
             
-            _sendMailService.EnqueueJob(sendMailId);
+            await _sendMailService.EnqueueJobAsync(sendMailId);
 
             // 7) Response
             var result = _mapper.Map<UserDto>(user);
