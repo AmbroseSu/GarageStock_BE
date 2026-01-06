@@ -45,5 +45,15 @@ public class ResponseMessages
     public const string PasswordChangedSuccessfully = "Password changed successfully";
     public const string RefreshTokenIsRequired = "Refresh token is required";
     public const string LogoutSuccessfully = "Logged out successfully";
+    public const string RefreshTokenSuccess = "Refresh token success";
+    
+    //Category
+    public const string NameIsRequired = "Category name is required";
+    public const string NameAlreadyExists = "Category name already exists. If you want to reactivate it, please activate the category.";
+    public const string CategoryNotFound = "Category not found";
+    public const string CategoryDeleted = "Category has been deleted";
+    public const string CategoryIdIsRequired = "Category ID is required";
+    public const string NoDataChanged = "No data has been changed";
+    public const string CategoryActived = "Category has been activated";
     
 }

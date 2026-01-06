@@ -66,23 +66,56 @@ public class BaseDao<T> where T : class
     }
 
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate,
-        Func<IQueryable<T>, IQueryable<T>> include = null)
+        Func<IQueryable<T>, IQueryable<T>> include = null,
+        Func<IQueryable<T>, IQueryable<T>> orderBy = null)
     {
         if (predicate == null) throw new ArgumentNullException(nameof(predicate));
         var query = _context.Set<T>().Where(predicate);
         if (include != null) query = include(query);
+        if (orderBy != null) query = orderBy(query);
 
         return await query.ToListAsync();
         //using var context = new DocumentManagementSystemDbContext();
         //return await _context.Set<T>().Where(predicate).ToListAsync();
     }
+    
+    public async Task<(IEnumerable<T> Data, int Total)> FindPagedAsync(
+        Expression<Func<T, bool>> predicate,
+        int page,
+        int limit,
+        Func<IQueryable<T>, IQueryable<T>> include = null,
+        Func<IQueryable<T>, IQueryable<T>> orderBy = null)
+    {
+        if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+        if (page <= 0) page = 1;
+        if (limit <= 0) limit = 10;
+
+        IQueryable<T> query = _context.Set<T>().Where(predicate);
+
+        if (include != null)
+            query = include(query);
+
+        var total = await query.CountAsync();
+
+        if (orderBy != null)
+            query = orderBy(query);
+
+        var data = await query
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .ToListAsync();
+
+        return (data, total);
+    }
 
     public async Task<T?> FindByAsync(Expression<Func<T, bool>> predicate,
-        Func<IQueryable<T>, IQueryable<T>> include = null)
+        Func<IQueryable<T>, IQueryable<T>> include = null,
+        Func<IQueryable<T>, IQueryable<T>> orderBy = null)
     {
         if (predicate == null) throw new ArgumentNullException(nameof(predicate));
         var query = _context.Set<T>().Where(predicate);
         if (include != null) query = include(query);
+        if (orderBy != null) query = orderBy(query);
 
         return await query.FirstOrDefaultAsync();
         //using var context = new DocumentManagementSystemDbContext();

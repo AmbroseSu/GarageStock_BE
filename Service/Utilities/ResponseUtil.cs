@@ -59,14 +59,14 @@ public class ResponseUtil
 
     private static MeatadataDto GetMeatadata(int page, int limit, int count)
     {
-        //var totalPages = (int)Math.Ceiling((double)count / limit);
+        var totalPages = (int)Math.Ceiling((double)count / limit);
 
         return new MeatadataDto
         {
             page = page,
-            total = count,
+            total = totalPages,
             limit = limit,
-            hasNextPage = page < count,
+            hasNextPage = page < totalPages,
             hasPrevPage = page > 1
         };
     }

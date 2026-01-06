@@ -69,7 +69,7 @@ public class GarageStockDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.Name);
             entity.Property(e => e.Description);
-            entity.Property(e => e.IdDeleted);
+            entity.Property(e => e.IsDeleted);
 
             entity.HasMany(e => e.Products)
                 .WithOne(e => e.Category)

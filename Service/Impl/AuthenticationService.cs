@@ -66,8 +66,7 @@ public class AuthenticationService : IAuthenticationService
             jwtAuthResponse.RefreshToken = refreshToken;
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
-            return ResponseUtil.GetObject(jwtAuthResponse, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,
-                0);
+            return ResponseUtil.GetObject(jwtAuthResponse, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception e)
         {
@@ -103,8 +102,7 @@ public class AuthenticationService : IAuthenticationService
         return ResponseUtil.GetObject(
             refreshTokenResponse,
             ResponseMessages.GetSuccessfully,
-            HttpStatusCode.OK,
-            0);
+            HttpStatusCode.OK, 1);
     }
     
     public async Task<ResponseDto> ForgotPasswordAsync(string email)
@@ -127,8 +125,7 @@ public class AuthenticationService : IAuthenticationService
                 return ResponseUtil.GetObject(
                 ResponseMessages.IfEmailExists,
                 ResponseMessages.GetSuccessfully,
-                HttpStatusCode.OK,
-                0);
+                HttpStatusCode.OK, 1);
 
             // 1️⃣ Invalidate OTP cũ (nếu có)
             var oldOtps = await _unitOfWork.VerificationOtpUOW.FindAllByUserIdAsync(user.UserId);
@@ -165,8 +162,7 @@ public class AuthenticationService : IAuthenticationService
             return ResponseUtil.GetObject(
                 ResponseMessages.IfEmailExists,
                 ResponseMessages.GetSuccessfully,
-                HttpStatusCode.OK,
-                0);
+                HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
         {
@@ -258,8 +254,7 @@ public class AuthenticationService : IAuthenticationService
             return ResponseUtil.GetObject(
                 response,
                 ResponseMessages.OtpVerified,
-                HttpStatusCode.OK,
-                0);
+                HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
         {
@@ -352,9 +347,7 @@ public class AuthenticationService : IAuthenticationService
         return ResponseUtil.GetObject(
             ResponseMessages.PasswordResetSuccessfully,
             ResponseMessages.UpdateSuccessfully,
-            HttpStatusCode.OK,
-            0
-        );
+            HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
@@ -438,9 +431,7 @@ public class AuthenticationService : IAuthenticationService
             return ResponseUtil.GetObject(
                 ResponseMessages.PasswordChangedSuccessfully,
                 ResponseMessages.UpdateSuccessfully,
-                HttpStatusCode.OK,
-                0
-            );
+                HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
         {

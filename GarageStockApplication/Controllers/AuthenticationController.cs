@@ -37,7 +37,7 @@ namespace GarageStockApplication.Controllers
             var result = await _authTokenService.RefreshAsync(req.RefreshToken);
 
             if (result == null)
-                return Unauthorized(ResponseUtil.Error("Invalid refresh token", "Unauthorized", HttpStatusCode.Unauthorized));
+                return Unauthorized(ResponseUtil.Error(ResponseMessages.InvalidOrExpiredRefreshToken, ResponseMessages.Unauthorized, HttpStatusCode.Unauthorized));
 
             var (access, refresh) = result.Value;
 
@@ -45,7 +45,7 @@ namespace GarageStockApplication.Controllers
             {
                 Token = access,
                 RefreshToken = refresh
-            }, "Refresh token success", HttpStatusCode.OK, 0));
+            }, ResponseMessages.RefreshTokenSuccess, HttpStatusCode.OK, 1));
         }
         
         [HttpPost("forgot-password")]

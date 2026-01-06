@@ -99,9 +99,7 @@ public class AuthTokenService : IAuthTokenService
                 return ResponseUtil.GetObject(
                     ResponseMessages.LogoutSuccessfully,
                     ResponseMessages.UpdateSuccessfully,
-                    HttpStatusCode.OK,
-                    0
-                );
+                    HttpStatusCode.OK, 1);
 
             // 2️⃣ Xóa refresh token
             await _redis.DeleteAsync(RtKey(hash));
@@ -113,9 +111,7 @@ public class AuthTokenService : IAuthTokenService
             return ResponseUtil.GetObject(
                 ResponseMessages.LogoutSuccessfully,
                 ResponseMessages.UpdateSuccessfully,
-                HttpStatusCode.OK,
-                0
-            );
+                HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
         {
