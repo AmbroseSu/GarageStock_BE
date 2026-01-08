@@ -19,12 +19,12 @@ public class CategoryService : ICategoryService
         _mapper = mapper;
     }
     
-    public async Task<ResponseDto> GetAllAsync(int page, int limit)
+    public async Task<ResponseDto> GetAllAsync(int page, int limit, string? search)
     {
         try
         {
             var (data, total) = await _unitOfWork.CategoryUOW
-                .FindAllCategoriesAsync(page, limit);
+                .FindAllCategoriesAsync(page, limit, search);
 
             var result = _mapper.Map<List<CategoryDto>>(data);
 
@@ -48,12 +48,12 @@ public class CategoryService : ICategoryService
         }
     }
     
-    public async Task<ResponseDto> GetAllActiveAsync(int page, int limit)
+    public async Task<ResponseDto> GetAllActiveAsync(int page, int limit, string? search)
     {
         try
         {
             var (data, total) = await _unitOfWork.CategoryUOW
-                .FindAllCategoriesActiveAsync(page, limit);
+                .FindAllCategoriesActiveAsync(page, limit, search);
 
             var result = _mapper.Map<List<CategoryDto>>(data);
 

@@ -1,6 +1,7 @@
 ﻿using BusinessObject;
 using DataAccess;
 using DataAccess.DAO;
+using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Impl;
 
@@ -24,15 +25,29 @@ public class CategoryRepository : ICategoryRepository
         if (entity == null) throw new ArgumentNullException(nameof(entity));
         await _categoryDao.UpdateAsync(entity);
     }
-    
-    public async Task<(IEnumerable<Categories> Data, int Total)> FindAllCategoriesAsync(int page, int limit)
+
+    public async Task<(IEnumerable<Categories> Data, int Total)> FindAllCategoriesAsync(int page, int limit,
+        string? search = null)
     {
-        return await _categoryDao.FindPagedAsync(u => true, page, limit);
+        return await _categoryDao.FindPagedAsync(
+            c => string.IsNullOrEmpty(search) 
+                 || EF.Functions.ILike(c.Name, $"%{search}%")
+                 || (c.Description != null && EF.Functions.ILike(c.Description, $"%{search}%")), 
+            page,
+            limit);
     }
-    
-    public async Task<(IEnumerable<Categories> Data, int Total)> FindAllCategoriesActiveAsync(int page, int limit)
+
+    public async Task<(IEnumerable<Categories> Data, int Total)> FindAllCategoriesActiveAsync(int page, int limit,
+        string? search = null)
     {
-        return await _categoryDao.FindPagedAsync(u => u.IsDeleted == false, page, limit);
+        return await _categoryDao.FindPagedAsync(
+            c => 
+                c.IsDeleted == false 
+                && (string.IsNullOrEmpty(search)
+                    || EF.Functions.ILike(c.Name, $"%{search}%")
+                    || (c.Description != null && EF.Functions.ILike(c.Description, $"%{search}%"))), 
+            page, 
+            limit);
     }
     
     public async Task<Categories?> FindCategoryByIdAsync(Guid? id, bool? isDeleted = null) 

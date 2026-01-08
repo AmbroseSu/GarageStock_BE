@@ -18,15 +18,15 @@ namespace GarageStockApplication.Controllers
         }
 
         [HttpGet("get-all-categories")]
-        public async Task<ResponseDto> GetAllCategoriesAsync([FromQuery] int page = 1,[FromQuery] int limit = 10)
+        public async Task<ResponseDto> GetAllCategoriesAsync([FromQuery] int page = 1,[FromQuery] int limit = 10, [FromQuery] string? search = null)
         {
-            return await _categoryService.GetAllAsync(page, limit);
+            return await _categoryService.GetAllAsync(page, limit, search);
         }
 
         [HttpGet("get-all-active-categories")]
-        public async Task<ResponseDto> GetAllActiveCategoriesAsync([FromQuery] int page = 1,[FromQuery] int limit = 10)
+        public async Task<ResponseDto> GetAllActiveCategoriesAsync([FromQuery] int page = 1,[FromQuery] int limit = 10, [FromQuery] string? search = null)
         {
-            return await _categoryService.GetAllActiveAsync(page, limit);
+            return await _categoryService.GetAllActiveAsync(page, limit, search);
         }
         
         [HttpPost("create-category")]
